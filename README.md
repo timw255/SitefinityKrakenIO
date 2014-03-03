@@ -4,8 +4,8 @@ This is not a standalone project. The files in this repository are an example of
 
 ##Dependencies
 
-*Json.NET
-*RestSharp
+* Json.NET
+* RestSharp
 
 If you'd like, you can remove the dependencies by modifying the way Kraken.cs and AlbumOptimizationTask.cs handle the HTTPy/JSONy bits.
 
@@ -19,7 +19,8 @@ Move the source files into your project.
 
 ###Adding the "Optimize" command to the Action menu
 
-Navigate to: **Administration -> Settings -> Advanced -> Libraries -> Controls -> AlbumsBackend -> Views -> AlbumsBackendList -> ViewModes -> Grid -> Columns -> Actions**
+Navigate to:
+**Administration -> Settings -> Advanced -> Libraries -> Controls -> AlbumsBackend -> Views -> AlbumsBackendList -> ViewModes -> Grid -> Columns -> Actions**
 
 Once you get there, put the following HTML in the **Client Template** field:
 
@@ -70,8 +71,8 @@ Here are the values to register the script:
 
 
 ###Once everything is hooked up
-*Build
-*Head over to [Kraken.io](https://kraken.io/) and register for an account.
-*Enter your API Key and API Secret in the new "Kraken" configuration section. _(Administration -> Settings -> Advanced -> Kraken)_
+* Build
+* Head over to [Kraken.io](https://kraken.io/) and register for an account.
+* Enter your API Key and API Secret in the new "Kraken" configuration section. _(Administration -> Settings -> Advanced -> Kraken)_
 
 **Note:** By default **Lossy optimization** is turned off but it's worth turning on if you want to really optimize the images. Check out [the docs](https://kraken.io/docs/lossy-optimization) to see if it's something you're interested in.
