@@ -18,6 +18,7 @@ namespace SitefinityWebApp.Mvc.Controllers
         {
             SchedulingManager manager = SchedulingManager.GetManager();
 
+            // This Guid is passed back to Sitefinity so that it can monitor the task progress
             Guid guid = Guid.NewGuid();
 
             AlbumOptimizationTask albumOptimizationTask = new AlbumOptimizationTask()
