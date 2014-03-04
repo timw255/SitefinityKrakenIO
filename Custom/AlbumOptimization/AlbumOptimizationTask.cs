@@ -1,11 +1,9 @@
 ﻿using Newtonsoft.Json;
-using SitefinityWebApp.Custom;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Web;
 using Telerik.Sitefinity.Configuration;
 using Telerik.Sitefinity.GenericContent.Model;
 using Telerik.Sitefinity.Libraries.Model;
@@ -17,9 +15,9 @@ namespace SitefinityWebApp.Custom.AlbumOptimization
 {
     public class AlbumOptimizationTask : ScheduledTask
     {
-        private int itemsCount;
+        private int _itemsCount;
 
-        private int currentIndex;
+        private int _currentIndex;
 
         public Guid AlbumId
         {
@@ -54,62 +52,83 @@ namespace SitefinityWebApp.Custom.AlbumOptimization
 
             string key = _kConfig.APIKey;
             string secret = _kConfig.APISecret;
-            bool lossy = _kConfig.LossyOptimization;
+            bool useCallbacks = _kConfig.UseCallbacks;
+            bool useLossy = _kConfig.LossyOptimization;
 
             Kraken k = new Kraken(key, secret);
 
             Album album = _librariesManager.GetAlbum(this.AlbumId);
 
+            var albumProvider = (LibrariesDataProvider)album.Provider;
+
             var images = album.Images().Where(i => i.Status == ContentLifecycleStatus.Master);
 
-            itemsCount = images.Count();
+            _itemsCount = images.Count();
 
             foreach (Image image in images)
             {
-                var albumProvider = (LibrariesDataProvider)album.Provider;
-
                 KrakenRequest kr = new KrakenRequest();
 
-                kr.Lossy = lossy;
-                kr.Wait = true;
+                kr.Lossy = useLossy;
 
+                if (_kConfig.UseCallbacks)
+                {
+                    kr.CallbackUrl = _kConfig.CallbackURL;
+                }
+                else
+                {
+                    kr.Wait = true;
+                }
+
+                // Pull the Stream of the image from the provider.
+                // This saves us from having to care about BlobStorage
                 Stream imageData = albumProvider.Download(image);
 
-                using (var br = new BinaryReader(imageData))
+                // Can't trust the length of Stream. Converting to a MemoryStream
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    kr.File = br.ReadBytes((int)imageData.Length);
+                    imageData.CopyTo(ms);
+
+                    kr.File = ms.ToArray();
                 }
 
-                var response = k.Upload(kr, Path.GetFileNameWithoutExtension(image.FilePath), image.Extension);
+                var response = k.Upload(kr, image.Id.ToString(), image.Extension);
 
-                if (response.Success == false || response.Error != null)
+                if (_kConfig.UseCallbacks)
                 {
-                    UpdateProgress();
-                    continue;
+                    Global.KrakenCallbackIds.Add(response.Id, album.Id);
                 }
-
-                using (var webClient = new WebClient())
-                using (var stream = webClient.OpenRead(response.KrakedUrl))
+                else
                 {
-                    //Check out the master to get a temp version.
-                    Image temp = _librariesManager.Lifecycle.CheckOut(image) as Image;
-
-                    //Make the modifications to the temp version.
-                    _librariesManager.Upload(temp, stream, Path.GetExtension(response.KrakedUrl));
-
-                    //Checkin the temp and get the updated master version.
-                    //After the check in the temp version is deleted.
-                    _librariesManager.Lifecycle.CheckIn(temp);
-
-                    _librariesManager.SaveChanges();
-
-                    // Check to see if this image is already published.
-                    // If it is, we need to publish the "Master" to update "Live"
-                    if (image.GetWorkflowState() == "Published")
+                    if (response.Success == false || response.Error != null)
                     {
-                        var bag = new Dictionary<string, string>();
-                        bag.Add("ContentType", typeof(Image).FullName);
-                        WorkflowManager.MessageWorkflow(image.Id, typeof(Image), albumProvider.Name, "Publish", false, bag);
+                        UpdateProgress();
+                        continue;
+                    }
+
+                    using (var webClient = new WebClient())
+                    using (var stream = webClient.OpenRead(response.KrakedUrl))
+                    {
+                        //Check out the master to get a temp version.
+                        Image temp = _librariesManager.Lifecycle.CheckOut(image) as Image;
+
+                        //Make the modifications to the temp version.
+                        _librariesManager.Upload(temp, stream, Path.GetExtension(response.KrakedUrl));
+
+                        //Checkin the temp and get the updated master version.
+                        //After the check in the temp version is deleted.
+                        _librariesManager.Lifecycle.CheckIn(temp);
+
+                        _librariesManager.SaveChanges();
+
+                        // Check to see if this image is already published.
+                        // If it is, we need to publish the "Master" to update "Live"
+                        if (image.GetWorkflowState() == "Published")
+                        {
+                            var bag = new Dictionary<string, string>();
+                            bag.Add("ContentType", typeof(Image).FullName);
+                            WorkflowManager.MessageWorkflow(image.Id, typeof(Image), albumProvider.Name, "Publish", false, bag);
+                        }
                     }
                 }
 
@@ -120,10 +139,10 @@ namespace SitefinityWebApp.Custom.AlbumOptimization
         private void UpdateProgress()
         {
             AlbumOptimizationTask albumOptimizationTask = this;
-            albumOptimizationTask.currentIndex = albumOptimizationTask.currentIndex + 1;
+            albumOptimizationTask._currentIndex = albumOptimizationTask._currentIndex + 1;
             TaskProgressEventArgs taskProgressEventArg = new TaskProgressEventArgs()
             {
-                Progress = this.currentIndex * 100 / this.itemsCount,
+                Progress = this._currentIndex * 100 / this._itemsCount,
                 StatusMessage = ""
             };
             TaskProgressEventArgs taskProgressEventArg1 = taskProgressEventArg;

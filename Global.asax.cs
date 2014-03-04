@@ -17,6 +17,7 @@ namespace SitefinityWebApp
 {
     public class Global : System.Web.HttpApplication
     {
+        public static Dictionary<string, Guid> KrakenCallbackIds = new Dictionary<string, Guid>();
 
         protected void Application_Start(object sender, EventArgs e)
         {
