@@ -1,6 +1,10 @@
 #SitefinityKrakenIO
 
-This is not a standalone project. The files in this repository are an example of how to integrate Telerik Sitefinity CMS and Kraken.IO. You'll want to make sure you don't overwrite anything you already have going in your project. _(I'm specifically talking about what's in the Global.asax.cs)_
+This is not a standalone project.
+
+The files in this repository are an example of how to integrate Telerik Sitefinity CMS and Kraken.IO. You'll want to make sure you don't overwrite anything you already have going in your project. _(I'm specifically talking about what's in the Global.asax.cs)_
+
+This customization adds the ability to batch optimize entire Sitefinity albums using [Kraken.io](https://kraken.io/).
 
 ##Dependencies
 
@@ -13,7 +17,7 @@ If you'd like, you can remove the dependencies by modifying the way Kraken.cs an
 
 ###Copying the source files
 
-Move the source files into your project.
+Merge the source files into your project.
 
 **Note:** If you have to modify the namespaces for any reason, make sure that `TaskName` in the AlbumOptimizationTask.cs gets updated to reflect the changes. Otherwise, Sitefinity won't know the correct class to instantiate.
 
@@ -67,6 +71,7 @@ Navigate to the **Scripts** section of the **AlbumsBackendList** configuration a
 Here are the values to register the script:
 
 **Script location:** ~/Custom/AlbumOptimization/AlbumExtensions/AlbumExtensions.js
+
 **Name of the load method:** albumsListLoaded
 
 
